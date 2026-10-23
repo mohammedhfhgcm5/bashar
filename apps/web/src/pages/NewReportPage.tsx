@@ -11,6 +11,7 @@ import {
 } from '@damage/shared'
 import { ApiError, reportsApi } from '../api'
 import { MapCanvas } from '../components/MapCanvas'
+import { PhotoPicker } from '../components/PhotoPicker'
 import { Button, DamageBadge, ErrorNote, Field, PageTitle, fieldClass } from '../components/ui'
 
 type Draft = {
@@ -174,19 +175,14 @@ export function NewReportPage() {
       ) : null}
       {step === 2 ? (
         <section className="space-y-4">
-          <Field label={`الصور (حد ${MAX_IMAGES})`}>
-            <input
-              className={fieldClass}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              onChange={(event) => {
-                setPreview(null)
-                setDraft({ ...draft, files: Array.from(event.target.files ?? []).slice(0, MAX_IMAGES) })
-              }}
-            />
-          </Field>
-          <p className="text-sm text-[#5e574e]">{draft.files.length ? draft.files.map((file) => file.name).join('، ') : 'لم تُختر صور بعد'}</p>
+          <PhotoPicker
+            files={draft.files}
+            max={MAX_IMAGES}
+            onChange={(files) => {
+              setPreview(null)
+              setDraft((current) => ({ ...current, files }))
+            }}
+          />
           <div className="surface space-y-3 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-semibold">مستوى الضرر</h2>
