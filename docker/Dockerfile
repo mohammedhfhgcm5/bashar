@@ -20,10 +20,11 @@ RUN npm run build -w @damage/shared \
   && npm run build -w @damage/api \
   && npm run build -w @damage/web
 
-FROM postgis/postgis:16-3.4
+FROM postgres:16-bookworm
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
+    postgresql-16-postgis-3 \
     nginx \
     python3 \
     python-is-python3 \
