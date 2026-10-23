@@ -68,8 +68,16 @@ const samples = [
 ]
 
 async function pickImages(count) {
-  const names = (await readdir(imageDir)).filter((name) => /\.(jpe?g|png|webp)$/i.test(name))
-  if (names.length === 0) throw new Error(`No images in ${imageDir}. Run: npm run vision:prepare`)
+  let names = []
+  try {
+    names = (await readdir(imageDir)).filter((name) => /\.(jpe?g|png|webp)$/i.test(name))
+  } catch {
+    names = []
+  }
+  if (names.length === 0) {
+    console.log('No seed photos found. Demo reports will be created without images.')
+    return []
+  }
   const chosen = []
   for (let i = 0; i < count; i += 1) {
     chosen.push(names[i % names.length])
@@ -186,7 +194,10 @@ async function main() {
         data: { last: { increment: 1 } },
       })
       const reportId = randomUUID()
-      const files = await attachImages(reportId, [imagePool[imageCursor++], imagePool[imageCursor++]])
+      const photoNames = imagePool.length
+        ? [imagePool[imageCursor++], imagePool[imageCursor++]].filter(Boolean)
+        : []
+      const files = await attachImages(reportId, photoNames)
       const property = await prisma.property.create({
         data: {
           address: sample.address,

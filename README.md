@@ -35,13 +35,7 @@ docker compose up -d --build
 
 بدون هذين المتغيرين الحاوية تشغّل Postgres محلياً وتحفظ الصور على القرص، وهما يختفيان عندما تنام الخدمة.
 
-حساب المشرف الأول يُنشأ من `BOOTSTRAP_SUPERVISOR_EMAIL` و`BOOTSTRAP_SUPERVISOR_PASSWORD`.
-
-بيانات العرض (مواطن ومنظمة وبلاغات) تحتاج صور التدريب، ثم:
-
-```bash
-docker compose exec -w /app/apps/api app node prisma/seed.mjs
-```
+عند إقلاع الحاوية يتم تلقائياً: تهجير الجداول، إنشاء المشرف من `BOOTSTRAP_SUPERVISOR_EMAIL`، ثم بذر حساب المواطن والمنظمة وبلاغات العرض. إذا لم تكن صور التدريب داخل الصورة تُنشأ البلاغات بلا صور.
 
 ## التشغيل المحلي
 

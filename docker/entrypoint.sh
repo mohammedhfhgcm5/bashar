@@ -143,6 +143,9 @@ until DATABASE_URL="$migrate_url" /app/node_modules/.bin/prisma migrate deploy; 
   sleep 2
 done
 
+echo "seeding demo accounts"
+node prisma/seed.mjs || echo "seed failed, continuing startup"
+
 node dist/main.js &
 API_PID=$!
 set +e
