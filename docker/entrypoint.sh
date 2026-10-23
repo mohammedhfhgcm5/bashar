@@ -28,6 +28,9 @@ urlencode() {
 external_db=0
 if [ -n "${DATABASE_URL:-}" ]; then
   external_db=1
+  DATABASE_URL="${DATABASE_URL//&channel_binding=require/}"
+  DATABASE_URL="${DATABASE_URL//\?channel_binding=require&/?}"
+  DATABASE_URL="${DATABASE_URL%\?channel_binding=require}"
   case "$DATABASE_URL" in
     *sslmode=*) ;;
     *\?*) DATABASE_URL="${DATABASE_URL}&sslmode=require" ;;
