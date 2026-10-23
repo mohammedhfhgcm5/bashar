@@ -25,11 +25,26 @@ export BOOTSTRAP_SUPERVISOR_PHONE="${BOOTSTRAP_SUPERVISOR_PHONE:-0900000000}"
 urlencode() {
   python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"
 }
-export DATABASE_URL="postgresql://$(urlencode "$POSTGRES_USER"):$(urlencode "$POSTGRES_PASSWORD")@127.0.0.1:5432/$(urlencode "$POSTGRES_DB")?schema=public"
+external_db=0
+if [ -n "${DATABASE_URL:-}" ]; then
+  external_db=1
+  case "$DATABASE_URL" in
+    *sslmode=*) ;;
+    *\?*) DATABASE_URL="${DATABASE_URL}&sslmode=require" ;;
+    *) DATABASE_URL="${DATABASE_URL}?sslmode=require" ;;
+  esac
+  export DATABASE_URL
+  echo "using external database"
+else
+  export DATABASE_URL="postgresql://$(urlencode "$POSTGRES_USER"):$(urlencode "$POSTGRES_PASSWORD")@127.0.0.1:5432/$(urlencode "$POSTGRES_DB")?schema=public"
+fi
 
-mkdir -p "$PGDATA" "$UPLOAD_DIR" /models /var/run/postgresql
-chown -R postgres:postgres "$PGDATA" /var/run/postgresql
-chmod 700 "$PGDATA"
+mkdir -p "$UPLOAD_DIR" /models
+if [ "$external_db" -eq 0 ]; then
+  mkdir -p "$PGDATA" /var/run/postgresql
+  chown -R postgres:postgres "$PGDATA" /var/run/postgresql
+  chmod 700 "$PGDATA"
+fi
 
 python3 --version
 if [ -f "$VISION_MODEL_PATH" ]; then
@@ -41,7 +56,8 @@ fi
 envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/app.conf
 nginx
 
-if [ ! -s "$PGDATA/PG_VERSION" ]; then
+POSTGRES_PID=""
+if [ "$external_db" -eq 0 ] && [ ! -s "$PGDATA/PG_VERSION" ]; then
   if [ -n "$(ls -A "$PGDATA" 2>/dev/null || true)" ]; then
     echo "removing incomplete postgres data"
     find "$PGDATA" -mindepth 1 -delete
@@ -62,43 +78,49 @@ if [ ! -s "$PGDATA/PG_VERSION" ]; then
   printf "\nlisten_addresses = '127.0.0.1'\n" >> "$PGDATA/postgresql.conf"
 fi
 
-echo "starting postgres"
-gosu postgres postgres -D "$PGDATA" \
-  -c listen_addresses=127.0.0.1 \
-  -c shared_buffers=32MB \
-  -c dynamic_shared_memory_type=mmap \
-  -c huge_pages=off \
-  -c max_connections=40 \
-  -c work_mem=4MB \
-  -c maintenance_work_mem=32MB &
-POSTGRES_PID=$!
+if [ "$external_db" -eq 0 ]; then
+  echo "starting postgres"
+  gosu postgres postgres -D "$PGDATA" \
+    -c listen_addresses=127.0.0.1 \
+    -c shared_buffers=32MB \
+    -c dynamic_shared_memory_type=mmap \
+    -c huge_pages=off \
+    -c max_connections=40 \
+    -c work_mem=4MB \
+    -c maintenance_work_mem=32MB &
+  POSTGRES_PID=$!
+fi
 
 cleanup() {
   nginx -s quit 2>/dev/null || true
-  kill "$POSTGRES_PID" 2>/dev/null || true
-  wait "$POSTGRES_PID" 2>/dev/null || true
+  if [ -n "$POSTGRES_PID" ]; then
+    kill "$POSTGRES_PID" 2>/dev/null || true
+    wait "$POSTGRES_PID" 2>/dev/null || true
+  fi
 }
 trap 'cleanup; exit 0' TERM INT
 
-ready=0
-for _ in $(seq 1 90); do
-  if pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
-    ready=1
-    break
-  fi
-  if ! kill -0 "$POSTGRES_PID" 2>/dev/null; then
-    echo "postgres stopped during startup" >&2
-    wait "$POSTGRES_PID" || true
+if [ "$external_db" -eq 0 ]; then
+  ready=0
+  for _ in $(seq 1 90); do
+    if pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
+      ready=1
+      break
+    fi
+    if ! kill -0 "$POSTGRES_PID" 2>/dev/null; then
+      echo "postgres stopped during startup" >&2
+      wait "$POSTGRES_PID" || true
+      exit 1
+    fi
+    sleep 1
+  done
+  if [ "$ready" -ne 1 ]; then
+    echo "postgres was not ready in time" >&2
     exit 1
   fi
-  sleep 1
-done
-if [ "$ready" -ne 1 ]; then
-  echo "postgres was not ready in time" >&2
-  exit 1
 fi
 
-if [ "$POSTGRES_DB" != "$POSTGRES_USER" ]; then
+if [ "$external_db" -eq 0 ] && [ "$POSTGRES_DB" != "$POSTGRES_USER" ]; then
   existing=$(gosu postgres psql -U "$POSTGRES_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$POSTGRES_DB'")
   if [ "$existing" != "1" ]; then
     gosu postgres createdb -U "$POSTGRES_USER" --owner="$POSTGRES_USER" "$POSTGRES_DB"
@@ -106,8 +128,9 @@ if [ "$POSTGRES_DB" != "$POSTGRES_USER" ]; then
 fi
 
 cd /app/apps/api
+migrate_url="${DATABASE_URL//-pooler/}"
 attempt=0
-until /app/node_modules/.bin/prisma migrate deploy; do
+until DATABASE_URL="$migrate_url" /app/node_modules/.bin/prisma migrate deploy; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge 30 ]; then
     echo "migrations failed" >&2

@@ -26,7 +26,14 @@ docker compose up -d --build
 
 ضع نموذج التقييم في `ml/weights/peccd-yolov8n.onnx` قبل التشغيل. الحاوية تركّبه على `/models`. بدونه تشتغل المنصة ويظهر أن التقييم غير متاح. تدريب النموذج يبقى بـ `npm run vision:train` على الجهاز، لأن PyTorch لا يُثبَّت داخل صورة الرفع.
 
-على Render اربط المستودع من **Public Git Repository** (مو Existing Image) واكتب مسار البناء `Dockerfile` وليس `README.md`. اترك `PORT` لـ Render، واضبط `WEB_ORIGIN` على رابط `https://...onrender.com` و`COOKIE_SECURE=true`. قرص دائم على المسار `/data` يحفظ قاعدة البيانات والصور بعد إعادة التشغيل.
+على Render مسار البناء هو `Dockerfile`. اترك `PORT` فاضي، واضبط `WEB_ORIGIN` على رابط `https://...onrender.com` و`COOKIE_SECURE=true`.
+
+نوم Render يمسح قرص الحاوية، لذلك قاعدة البيانات تكون على Neon والصور على Cloudinary:
+
+- `DATABASE_URL`: رابط الاتصال من Neon، وفيه `sslmode=require`.
+- `CLOUDINARY_URL`: من لوحة Cloudinary، بالشكل `cloudinary://api_key:api_secret@cloud_name`.
+
+بدون هذين المتغيرين الحاوية تشغّل Postgres محلياً وتحفظ الصور على القرص، وهما يختفيان عندما تنام الخدمة.
 
 حساب المشرف الأول يُنشأ من `BOOTSTRAP_SUPERVISOR_EMAIL` و`BOOTSTRAP_SUPERVISOR_PASSWORD`.
 

@@ -429,10 +429,19 @@ export class ReportsService {
     return presentReport(asActor(user), await this.reload(id))
   }
 
-  async openImage(user: AuthUser, reportId: string, imageId: string) {
+  async openImage(
+    user: AuthUser,
+    reportId: string,
+    imageId: string,
+  ): Promise<
+    | { url: string; mimeType: string; name: string }
+    | { stream: ReturnType<StorageService['open']>; mimeType: string; name: string }
+  > {
     const report = await this.findReadable(user, reportId)
     const image = report.images.find((item) => item.id === imageId)
     if (!image) throw new NotFoundException('الصورة غير موجودة')
+    const url = this.storage.remoteUrl(image.storageKey)
+    if (url) return { url, mimeType: image.mimeType, name: image.originalName }
     return { stream: this.storage.open(image.storageKey), mimeType: image.mimeType, name: image.originalName }
   }
 

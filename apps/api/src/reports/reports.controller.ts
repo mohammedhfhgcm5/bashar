@@ -110,6 +110,10 @@ export class ReportsController {
     @Res() res: Response,
   ) {
     const file = await this.reports.openImage(user, id, imageId)
+    if ('url' in file) {
+      res.redirect(file.url)
+      return
+    }
     res.setHeader('Content-Type', file.mimeType)
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.name)}"`)
     file.stream.pipe(res)

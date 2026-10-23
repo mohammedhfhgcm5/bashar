@@ -19,6 +19,8 @@ services:
       BOOTSTRAP_SUPERVISOR_NAME: ${BOOTSTRAP_SUPERVISOR_NAME:-مشرف النظام}
       BOOTSTRAP_SUPERVISOR_PHONE: ${BOOTSTRAP_SUPERVISOR_PHONE:-0900000000}
       VISION_MODEL_PATH: /models/peccd-yolov8n.onnx
+      DATABASE_URL: ${DATABASE_URL:-}
+      CLOUDINARY_URL: ${CLOUDINARY_URL:-}
     volumes:
       - appdata:/data
       - ./ml/weights:/models:ro

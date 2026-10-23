@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config'
 import { Prisma, VisionStatus } from '@prisma/client'
 import { DefectClass, VISION_MIN_CONFIDENCE, aggregateDamage, type DamageSuggestion } from '@damage/shared'
 import { existsSync } from 'fs'
-import { readFile } from 'fs/promises'
 import path from 'path'
 import sharp from 'sharp'
 import { PrismaService } from '../prisma/prisma.service'
@@ -141,7 +140,7 @@ export class VisionService {
     }
     const perImage = []
     for (const image of images) {
-      const buffer = await readFile(this.storage.absolutePath(image.storageKey))
+      const buffer = await this.storage.read(image.storageKey)
       perImage.push({ imageId: image.id, detections: await this.detect(session, buffer) })
     }
     const suggestion = aggregateDamage(perImage)
