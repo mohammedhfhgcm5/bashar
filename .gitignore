@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+uploads/
+.pgdata/
+*.log
+apps/api/dist/
+apps/web/dist/
+packages/shared/dist/
+coverage/
+.DS_Store
+ml/datasets/
+ml/runs/
+ml/weights/*
+!ml/weights/.gitkeep
+!ml/weights/*.onnx
+*.pt

@@ -1,0 +1,126 @@
+%%{init: {"theme": "neutral", "er": {"layoutDirection": "TB"}} }%%
+erDiagram
+  %% Damage Documentation Platform — ERD from prisma/schema.prisma
+
+  Organization ||--o{ User : "employs"
+  Organization ||--o{ AidDistribution : "delivers"
+  User ||--o{ RefreshSession : "has"
+  User ||--o{ Report : "submits"
+  User ||--o{ Report : "reviews"
+  User ||--o{ ReviewLog : "acts"
+  User ||--o{ AidDistribution : "creates"
+  Property ||--o{ Report : "located_at"
+  Report ||--o{ Image : "contains"
+  Report ||--o| VisionAssessment : "assessed_by"
+  Report ||--o{ ReviewLog : "audited_by"
+  Report ||--o{ AidDistribution : "receives"
+
+  Organization {
+    uuid id PK
+    string name
+    string description
+    string contactEmail
+    string contactPhone
+    boolean isActive
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  User {
+    uuid id PK
+    string fullName
+    string email UK
+    string phone
+    string passwordHash
+    enum role
+    uuid organizationId FK
+    boolean isActive
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  RefreshSession {
+    uuid id PK
+    uuid userId FK
+    string tokenHash UK
+    datetime expiresAt
+    datetime createdAt
+  }
+
+  Property {
+    uuid id PK
+    string address
+    float lat
+    float lng
+    enum propertyType
+    datetime createdAt
+  }
+
+  Report {
+    uuid id PK
+    string referenceCode UK
+    uuid propertyId FK
+    uuid submittedById FK
+    uuid reviewedById FK
+    string description
+    enum damageLevel
+    enum status
+    string rejectionReason
+    datetime submittedAt
+    datetime reviewedAt
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  Image {
+    uuid id PK
+    uuid reportId FK
+    string storageKey
+    string originalName
+    string mimeType
+    int sizeBytes
+    datetime createdAt
+  }
+
+  VisionAssessment {
+    uuid id PK
+    uuid reportId UK
+    enum status
+    string modelName
+    enum suggestedLevel
+    float confidence
+    string summary
+    json findings
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  ReviewLog {
+    uuid id PK
+    uuid reportId FK
+    uuid actorId FK
+    enum action
+    json before
+    json after
+    string note
+    datetime createdAt
+  }
+
+  AidDistribution {
+    uuid id PK
+    uuid reportId FK
+    uuid organizationId FK
+    uuid createdById FK
+    enum aidType
+    enum status
+    string notes
+    datetime scheduledAt
+    datetime deliveredAt
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  ReportCounter {
+    int year PK
+    int last
+  }

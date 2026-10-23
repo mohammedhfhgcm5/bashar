@@ -1,0 +1,20 @@
+{
+  "name": "damage-docs",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @damage/api\" \"npm run dev -w @damage/web\"",
+    "build": "npm run build -w @damage/shared && npm run build -w @damage/api && npm run build -w @damage/web",
+    "test": "npm run test -w @damage/api",
+    "db:migrate": "npm run prisma:migrate -w @damage/api",
+    "db:seed": "npm run prisma:seed -w @damage/api",
+    "vision:prepare": "node ml/prepare-dataset.js",
+    "vision:train": "python ml/train.py"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

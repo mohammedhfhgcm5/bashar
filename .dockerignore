@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+.pgdata
+uploads
+apps/api/uploads
+coverage
+tmp
+ml/datasets
+ml/runs
+*.log
+.env
+**/.env
+!**/.env.example

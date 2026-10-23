@@ -1,0 +1,98 @@
+%%{init: {"theme": "neutral", "flowchart": {"curve": "basis", "nodeSpacing": 28, "rankSpacing": 50}} }%%
+flowchart TB
+  %% UML-style Use Case Diagram — actors and use cases from real API roles/policies
+
+  subgraph System["Damage Documentation Platform"]
+    direction TB
+
+    UC_Register(["Register CITIZEN / RESIDENT"])
+    UC_Login(["Login / Refresh / Logout"])
+    UC_Me(["View own profile"])
+
+    UC_CreateReport(["Create damage report + images"])
+    UC_EditDraft(["Edit draft / rejected report"])
+    UC_ManageImages(["Add / remove report images"])
+    UC_Submit(["Submit report"])
+    UC_Assess(["Run YOLOv8 multi-image assessment"])
+    UC_ViewOwn(["View own reports + map"])
+    UC_ApplySuggestion(["Apply suggested damage level"])
+
+    UC_ListAll(["List / filter all reports"])
+    UC_OpenReview(["Open report → UNDER_REVIEW"])
+    UC_Review(["Approve / Reject / Edit report"])
+    UC_ManageUsers(["Create / update SUPERVISOR & ORGANIZATION users"])
+    UC_ManageOrgs(["Create / update organizations"])
+    UC_Stats(["View statistics overview"])
+    UC_ViewAid(["View aid distributions"])
+
+    UC_ViewApproved(["View approved reports + map"])
+    UC_CreateAid(["Create aid for approved report"])
+    UC_UpdateAid(["Update aid status / notes"])
+  end
+
+  Citizen(["«actor»\nCitizen"])
+  Resident(["«actor»\nResident"])
+  Supervisor(["«actor»\nSupervisor"])
+  OrgUser(["«actor»\nOrganization User"])
+  Yolo[["«system»\nYOLOv8 Vision Service"]]
+
+  %% Auth — public + authenticated
+  Citizen --> UC_Register
+  Resident --> UC_Register
+  Citizen --> UC_Login
+  Resident --> UC_Login
+  Supervisor --> UC_Login
+  OrgUser --> UC_Login
+  Citizen --> UC_Me
+  Resident --> UC_Me
+  Supervisor --> UC_Me
+  OrgUser --> UC_Me
+
+  %% Citizen / Resident — same reporting capabilities
+  Citizen --> UC_CreateReport
+  Resident --> UC_CreateReport
+  Citizen --> UC_EditDraft
+  Resident --> UC_EditDraft
+  Citizen --> UC_ManageImages
+  Resident --> UC_ManageImages
+  Citizen --> UC_Submit
+  Resident --> UC_Submit
+  Citizen --> UC_Assess
+  Resident --> UC_Assess
+  Citizen --> UC_ViewOwn
+  Resident --> UC_ViewOwn
+  Citizen --> UC_ApplySuggestion
+  Resident --> UC_ApplySuggestion
+
+  %% Supervisor may also create/submit reports in policy
+  Supervisor --> UC_CreateReport
+  Supervisor --> UC_Submit
+  Supervisor --> UC_Assess
+  Supervisor --> UC_ListAll
+  Supervisor --> UC_OpenReview
+  Supervisor --> UC_Review
+  Supervisor --> UC_ManageUsers
+  Supervisor --> UC_ManageOrgs
+  Supervisor --> UC_Stats
+  Supervisor --> UC_ViewAid
+
+  %% Organization
+  OrgUser --> UC_ViewApproved
+  OrgUser --> UC_CreateAid
+  OrgUser --> UC_UpdateAid
+  OrgUser --> UC_Stats
+  OrgUser --> UC_ViewAid
+
+  %% Include / dependency
+  UC_CreateReport -.->|include| UC_Assess
+  UC_ManageImages -.->|include| UC_Assess
+  UC_Assess -.->|uses| Yolo
+  UC_Submit -.->|requires ≥1 image| UC_ManageImages
+  UC_CreateAid -.->|requires APPROVED| UC_Review
+
+  classDef actor fill:#FFF8E7,stroke:#5C4B2A,stroke-width:2px,color:#1a1a1a
+  classDef uc fill:#FFFFFF,stroke:#1F4E5F,stroke-width:1.5px,color:#1a1a1a
+  classDef sys fill:#E8F0F2,stroke:#1F4E5F,stroke-width:2px,color:#1a1a1a
+  class Citizen,Resident,Supervisor,OrgUser actor
+  class Yolo sys
+  class UC_Register,UC_Login,UC_Me,UC_CreateReport,UC_EditDraft,UC_ManageImages,UC_Submit,UC_Assess,UC_ViewOwn,UC_ApplySuggestion,UC_ListAll,UC_OpenReview,UC_Review,UC_ManageUsers,UC_ManageOrgs,UC_Stats,UC_ViewAid,UC_ViewApproved,UC_CreateAid,UC_UpdateAid uc

@@ -1,0 +1,28 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    environment:
+      PORT: "8080"
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      POSTGRES_USER: ${POSTGRES_USER:-damage}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-damage}
+      POSTGRES_DB: ${POSTGRES_DB:-damage}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-me-please-32b}
+      JWT_REFRESH_PEPPER: ${JWT_REFRESH_PEPPER:-dev-refresh-pepper-change-me-please-32}
+      BOOTSTRAP_SUPERVISOR_EMAIL: ${BOOTSTRAP_SUPERVISOR_EMAIL:-supervisor@damage.local}
+      BOOTSTRAP_SUPERVISOR_PASSWORD: ${BOOTSTRAP_SUPERVISOR_PASSWORD:-change-me-now}
+      BOOTSTRAP_SUPERVISOR_NAME: ${BOOTSTRAP_SUPERVISOR_NAME:-مشرف النظام}
+      BOOTSTRAP_SUPERVISOR_PHONE: ${BOOTSTRAP_SUPERVISOR_PHONE:-0900000000}
+      VISION_MODEL_PATH: /models/peccd-yolov8n.onnx
+    volumes:
+      - appdata:/data
+      - ./ml/weights:/models:ro
+    restart: unless-stopped
+
+volumes:
+  appdata:

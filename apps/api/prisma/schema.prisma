@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CITIZEN
+  RESIDENT
+  SUPERVISOR
+  ORGANIZATION
+}
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  BUILDING
+  COMMERCIAL
+  OTHER
+}
+
+enum DamageLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum ReviewAction {
+  APPROVE
+  REJECT
+  EDIT
+}
+
+enum AidType {
+  FOOD
+  SHELTER
+  MEDICAL
+  CASH
+  RECONSTRUCTION
+  OTHER
+}
+
+enum AidStatus {
+  PLANNED
+  IN_PROGRESS
+  DELIVERED
+  CANCELLED
+}
+
+enum VisionStatus {
+  READY
+  UNAVAILABLE
+  FAILED
+}
+
+model User {
+  id             String         @id @default(uuid())
+  fullName       String
+  email          String         @unique
+  phone          String
+  passwordHash   String
+  role           Role
+  organizationId String?
+  organization   Organization?  @relation(fields: [organizationId], references: [id])
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  reports        Report[]       @relation("SubmittedReports")
+  reviews        Report[]       @relation("ReviewedReports")
+  reviewLogs     ReviewLog[]
+  aidRecords     AidDistribution[]
+  sessions       RefreshSession[]
+
+  @@index([role])
+  @@index([organizationId])
+}
+
+model RefreshSession {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Organization {
+  id           String            @id @default(uuid())
+  name         String
+  description  String            @default("")
+  contactEmail String
+  contactPhone String
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  users        User[]
+  aidRecords   AidDistribution[]
+}
+
+model Property {
+  id           String       @id @default(uuid())
+  address      String
+  lat          Float
+  lng          Float
+  propertyType PropertyType
+  createdAt    DateTime     @default(now())
+  reports      Report[]
+
+  @@index([lat, lng])
+}
+
+model Report {
+  id              String       @id @default(uuid())
+  referenceCode   String       @unique
+  propertyId      String
+  property        Property     @relation(fields: [propertyId], references: [id])
+  submittedById   String
+  submittedBy     User         @relation("SubmittedReports", fields: [submittedById], references: [id])
+  reviewedById    String?
+  reviewedBy      User?        @relation("ReviewedReports", fields: [reviewedById], references: [id])
+  description     String
+  damageLevel     DamageLevel
+  status          ReportStatus @default(DRAFT)
+  rejectionReason String?
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  images          Image[]
+  reviewLogs      ReviewLog[]
+  aidRecords      AidDistribution[]
+  assessment      VisionAssessment?
+
+  @@index([status])
+  @@index([submittedById])
+  @@index([damageLevel])
+  @@index([createdAt])
+}
+
+model Image {
+  id           String   @id @default(uuid())
+  reportId     String
+  report       Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  storageKey   String
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  createdAt    DateTime @default(now())
+}
+
+model VisionAssessment {
+  id             String        @id @default(uuid())
+  reportId       String        @unique
+  report         Report        @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  status         VisionStatus
+  modelName      String
+  suggestedLevel DamageLevel?
+  confidence     Float?
+  summary        String        @default("")
+  findings       Json
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model ReviewLog {
+  id        String       @id @default(uuid())
+  reportId  String
+  report    Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User         @relation(fields: [actorId], references: [id])
+  action    ReviewAction
+  before    Json
+  after     Json
+  note      String       @default("")
+  createdAt DateTime     @default(now())
+
+  @@index([reportId])
+}
+
+model AidDistribution {
+  id             String       @id @default(uuid())
+  reportId       String
+  report         Report       @relation(fields: [reportId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  aidType        AidType
+  status         AidStatus    @default(PLANNED)
+  notes          String       @default("")
+  scheduledAt    DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([reportId])
+  @@index([organizationId])
+  @@index([status])
+}
+
+model ReportCounter {
+  year Int @id
+  last Int
+}
