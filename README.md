@@ -10,7 +10,7 @@
 
 ## التشغيل بـ Docker
 
-حاوية واحدة فيها PostgreSQL/PostGIS والـ API والواجهة وPython. ملف البناء: `docker/Dockerfile`.
+حاوية واحدة فيها PostgreSQL/PostGIS والـ API والواجهة وPython. ملف البناء في جذر المستودع: `Dockerfile`.
 
 ```bash
 cp .env.example .env
@@ -26,7 +26,7 @@ docker compose up -d --build
 
 ضع نموذج التقييم في `ml/weights/peccd-yolov8n.onnx` قبل التشغيل. الحاوية تركّبه على `/models`. بدونه تشتغل المنصة ويظهر أن التقييم غير متاح. تدريب النموذج يبقى بـ `npm run vision:train` على الجهاز، لأن PyTorch لا يُثبَّت داخل صورة الرفع.
 
-على Render اربط المستودع من **Public Git Repository** (مو Existing Image) واختر Dockerfile بالمسار `docker/Dockerfile`. اترك `PORT` لـ Render، واضبط `WEB_ORIGIN` على رابط `https://...onrender.com` و`COOKIE_SECURE=true`. قرص دائم على المسار `/data` يحفظ قاعدة البيانات والصور بعد إعادة التشغيل.
+على Render اربط المستودع من **Public Git Repository** (مو Existing Image) واكتب مسار البناء `Dockerfile` وليس `README.md`. اترك `PORT` لـ Render، واضبط `WEB_ORIGIN` على رابط `https://...onrender.com` و`COOKIE_SECURE=true`. قرص دائم على المسار `/data` يحفظ قاعدة البيانات والصور بعد إعادة التشغيل.
 
 حساب المشرف الأول يُنشأ من `BOOTSTRAP_SUPERVISOR_EMAIL` و`BOOTSTRAP_SUPERVISOR_PASSWORD`.
 
@@ -84,5 +84,5 @@ npm run vision:train
 - `apps/api` — NestJS + Prisma + ONNX Runtime، على المنفذ الداخلي 3000  
 - `packages/shared` — مخططات Zod والأدوار وتجميع كشف الضرر  
 - `ml/` — بيانات PECCD وسكربت التدريب `train.py`  
-- `docker/Dockerfile` — صورة واحدة: قاعدة البيانات + API + الواجهة + Python  
+- `Dockerfile` — صورة واحدة: قاعدة البيانات + API + الواجهة + Python  
 - `docs/uml/` — مخططات ERD و Use Case  
