@@ -124,6 +124,15 @@ async function upsertUser(data) {
 }
 
 async function main() {
+  const existingCitizen = await prisma.user.findUnique({ where: { email: 'citizen@damage.local' } })
+  if (existingCitizen) {
+    const reports = await prisma.report.count({ where: { submittedById: existingCitizen.id } })
+    if (reports >= samples.length) {
+      console.log('Seed already applied, skipping.')
+      return
+    }
+  }
+
   const hash = await bcrypt.hash(password, 12)
   let org = await prisma.organization.findFirst({ where: { contactEmail: 'org@damage.local' } })
   if (org) {
